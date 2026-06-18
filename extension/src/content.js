@@ -4,8 +4,13 @@ async function initializeVideoLearningAssistant() {
     import(chrome.runtime.getURL("src/ui/pauseButton.js")),
   ]);
 
-  const adapter = createAdapter();
+  let activeAdapter = null;
+  let attachedVideo = null;
+  let detachCurrent = null;
+  let pauseTimer = null;
+
   const pauseButton = createPauseButton((taskType) => {
+    const adapter = activeAdapter ?? createAdapter();
     const videoContext = adapter.getVideoContext();
     const subtitle = adapter.getCurrentSubtitle();
     chrome.runtime.sendMessage({
@@ -14,12 +19,10 @@ async function initializeVideoLearningAssistant() {
     });
   });
 
-  let pauseTimer = null;
-
   function showAfterDebounce() {
     clearTimeout(pauseTimer);
     pauseTimer = setTimeout(() => {
-      const video = adapter.getVideoElement();
+      const video = activeAdapter?.getVideoElement();
       if (video?.paused) pauseButton.show();
     }, 300);
   }
@@ -29,15 +32,56 @@ async function initializeVideoLearningAssistant() {
     pauseButton.hide();
   }
 
-  function attach() {
-    if (!adapter.detect()) return;
-    adapter.onPause(showAfterDebounce);
-    adapter.onPlay(hideButton);
+  function detachAttachedVideo() {
+    detachCurrent?.();
+    detachCurrent = null;
+    attachedVideo = null;
+    activeAdapter = null;
+    hideButton();
   }
 
-  attach();
+  function tryAttach() {
+    const adapter = createAdapter();
+    if (!adapter.detect()) {
+      if (attachedVideo && !document.documentElement.contains(attachedVideo)) {
+        detachAttachedVideo();
+      }
+      return false;
+    }
+
+    const video = adapter.getVideoElement();
+    if (!video) return false;
+    if (video === attachedVideo) {
+      activeAdapter = adapter;
+      return true;
+    }
+
+    detachAttachedVideo();
+
+    video.addEventListener("pause", showAfterDebounce);
+    video.addEventListener("play", hideButton);
+    attachedVideo = video;
+    activeAdapter = adapter;
+    detachCurrent = () => {
+      video.removeEventListener("pause", showAfterDebounce);
+      video.removeEventListener("play", hideButton);
+    };
+    return true;
+  }
+
+  const observer = new MutationObserver(() => {
+    tryAttach();
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  if (!tryAttach()) {
+    setTimeout(tryAttach, 500);
+  }
 }
 
-initializeVideoLearningAssistant().catch((error) => {
-  console.error("Video Learning Assistant failed to initialize", error);
-});
+if (!window.__VLA_CONTENT_SCRIPT_LOADED__) {
+  window.__VLA_CONTENT_SCRIPT_LOADED__ = true;
+  initializeVideoLearningAssistant().catch((error) => {
+    console.error("Video Learning Assistant failed to initialize", error);
+  });
+}

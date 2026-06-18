@@ -2,7 +2,12 @@ import { GenericVideoAdapter } from "./generic.js";
 
 export class BilibiliAdapter extends GenericVideoAdapter {
   detect() {
-    return this.window.location.hostname.includes("bilibili.com") && Boolean(this.getVideoElement());
+    return (
+      this.window.location.protocol === "https:" &&
+      this.window.location.hostname === "www.bilibili.com" &&
+      this.window.location.pathname.startsWith("/video/") &&
+      Boolean(this.getVideoElement())
+    );
   }
 
   getVideoContext() {

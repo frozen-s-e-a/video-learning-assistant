@@ -1,4 +1,6 @@
 export function createPauseButton(onAnalyze) {
+  document.getElementById("vla-pause-button")?.remove();
+
   const container = document.createElement("div");
   container.id = "vla-pause-button";
   container.style.cssText = [

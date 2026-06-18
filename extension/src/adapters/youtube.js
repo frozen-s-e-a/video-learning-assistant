@@ -3,7 +3,8 @@ import { GenericVideoAdapter } from "./generic.js";
 export class YouTubeAdapter extends GenericVideoAdapter {
   detect() {
     return (
-      this.window.location.hostname.includes("youtube.com") &&
+      this.window.location.protocol === "https:" &&
+      this.window.location.hostname === "www.youtube.com" &&
       this.window.location.pathname === "/watch" &&
       Boolean(this.getVideoElement())
     );

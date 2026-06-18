@@ -4,10 +4,18 @@ import { YouTubeAdapter } from "./youtube.js";
 
 export function selectAdapterName(url) {
   const parsed = new URL(url);
-  if (parsed.hostname.includes("bilibili.com") && parsed.pathname.startsWith("/video/")) {
+  if (
+    parsed.protocol === "https:" &&
+    parsed.hostname === "www.bilibili.com" &&
+    parsed.pathname.startsWith("/video/")
+  ) {
     return "bilibili";
   }
-  if (parsed.hostname.includes("youtube.com") && parsed.pathname === "/watch") {
+  if (
+    parsed.protocol === "https:" &&
+    parsed.hostname === "www.youtube.com" &&
+    parsed.pathname === "/watch"
+  ) {
     return "youtube";
   }
   return "generic";

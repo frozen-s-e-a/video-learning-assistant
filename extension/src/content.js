@@ -1,7 +1,8 @@
 async function initializeVideoLearningAssistant() {
-  const [{ createAdapter }, { createPauseButton }] = await Promise.all([
+  const [{ createAdapter }, { createPauseButton }, { startRegionSelection }] = await Promise.all([
     import(chrome.runtime.getURL("src/adapters/index.js")),
     import(chrome.runtime.getURL("src/ui/pauseButton.js")),
+    import(chrome.runtime.getURL("src/ui/overlay.js")),
   ]);
 
   let activeAdapter = null;
@@ -9,14 +10,29 @@ async function initializeVideoLearningAssistant() {
   let detachCurrent = null;
   let pauseTimer = null;
 
-  const pauseButton = createPauseButton((taskType) => {
+  function sendAnalyzeMessage(taskType, selection) {
     const adapter = activeAdapter ?? createAdapter();
     const videoContext = adapter.getVideoContext();
     const subtitle = adapter.getCurrentSubtitle();
     chrome.runtime.sendMessage({
       type: "VLA_ANALYZE_CURRENT_FRAME",
-      payload: { taskType, videoContext, subtitle },
+      payload: { taskType, videoContext, subtitle, selection },
     });
+  }
+
+  const pauseButton = createPauseButton((taskType) => {
+    sendAnalyzeMessage(taskType, null);
+  });
+
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type !== "VLA_SELECT_REGION") return false;
+
+    startRegionSelection().then((selection) => {
+      if (selection) sendAnalyzeMessage(message.taskType || "auto", selection);
+      sendResponse({ ok: true, selection });
+    });
+
+    return true;
   });
 
   function showAfterDebounce() {

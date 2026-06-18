@@ -65,6 +65,15 @@ async function main() {
 
     chrome.storage.session.get(defaults).then(renderState);
   });
+
+  document.querySelector("#selectRegion").addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+    await chrome.tabs.sendMessage(tab.id, {
+      type: "VLA_SELECT_REGION",
+      taskType: "auto"
+    });
+  });
 }
 
 main();

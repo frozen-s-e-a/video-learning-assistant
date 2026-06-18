@@ -9,6 +9,7 @@ async function initializeVideoLearningAssistant() {
   let attachedVideo = null;
   let detachCurrent = null;
   let pauseTimer = null;
+  let regionSelectionActive = false;
 
   function sendAnalyzeMessage(taskType, selection) {
     const adapter = activeAdapter ?? createAdapter();
@@ -27,10 +28,23 @@ async function initializeVideoLearningAssistant() {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type !== "VLA_SELECT_REGION") return false;
 
-    startRegionSelection().then((selection) => {
-      if (selection) sendAnalyzeMessage(message.taskType || "auto", selection);
-      sendResponse({ ok: true, selection });
-    });
+    if (regionSelectionActive) {
+      sendResponse({ ok: false, error: "Region selection is already active" });
+      return true;
+    }
+
+    regionSelectionActive = true;
+    startRegionSelection()
+      .then((selection) => {
+        if (selection) sendAnalyzeMessage(message.taskType || "auto", selection);
+        sendResponse({ ok: true, selection });
+      })
+      .catch((error) => {
+        sendResponse({ ok: false, error: error?.message || "Region selection failed" });
+      })
+      .finally(() => {
+        regionSelectionActive = false;
+      });
 
     return true;
   });

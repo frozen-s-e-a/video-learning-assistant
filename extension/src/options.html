@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Video Learning Assistant Settings</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; max-width: 720px; margin: 32px auto; }
+      label { display: block; margin: 14px 0; }
+      input, select { width: 100%; padding: 8px; margin-top: 4px; }
+      button { padding: 8px 12px; }
+      #status { margin-left: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Video Learning Assistant</h1>
+    <label>Backend URL <input id="backendUrl"></label>
+    <label>Access Token <input id="accessToken" type="password"></label>
+    <label>Provider
+      <select id="defaultProvider">
+        <option value="fake">Fake</option>
+        <option value="openai">GPT</option>
+        <option value="anthropic">Claude</option>
+        <option value="deepseek">DeepSeek</option>
+        <option value="mimo">MiMo</option>
+      </select>
+    </label>
+    <label>Model <input id="defaultModel"></label>
+    <label>Task Type
+      <select id="defaultTaskType">
+        <option value="auto">Auto</option>
+        <option value="code">Code</option>
+        <option value="error">Error</option>
+        <option value="concept">Concept</option>
+      </select>
+    </label>
+    <label>History Limit <input id="historyLimit" type="number" min="1" max="500"></label>
+    <label><input id="showPauseButton" type="checkbox"> Show pause button</label>
+    <button id="save">Save</button><span id="status"></span>
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

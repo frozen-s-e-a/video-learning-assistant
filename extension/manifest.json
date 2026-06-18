@@ -16,6 +16,12 @@
       "run_at": "document_idle"
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/adapters/*.js", "src/ui/*.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "side_panel": {
     "default_path": "src/sidepanel.html"
   },

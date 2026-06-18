@@ -1,4 +1,5 @@
 import { getSettings, saveSettings } from "./services/settings.js";
+import { normalizeHistoryLimit } from "./services/history.js";
 
 const fields = [
   "backendUrl",
@@ -17,7 +18,7 @@ function readForm() {
     defaultProvider: document.querySelector("#defaultProvider").value,
     defaultModel: document.querySelector("#defaultModel").value.trim(),
     defaultTaskType: document.querySelector("#defaultTaskType").value,
-    historyLimit: Number(document.querySelector("#historyLimit").value),
+    historyLimit: normalizeHistoryLimit(document.querySelector("#historyLimit").value),
     showPauseButton: document.querySelector("#showPauseButton").checked
   };
 }

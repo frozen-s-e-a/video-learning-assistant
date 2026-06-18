@@ -24,4 +24,34 @@ describe("analyzeFrame", () => {
       })
     );
   });
+
+  it("throws backend JSON error messages", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: { message: "Model is unavailable" } })
+    });
+
+    await expect(analyzeFrame({
+      backendUrl: "https://example.com",
+      accessToken: "token",
+      payload: { provider: "fake" },
+      fetchImpl: fetchMock
+    })).rejects.toThrow("Model is unavailable");
+  });
+
+  it("throws a stable error for non-JSON backend failures", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => {
+        throw new SyntaxError("Unexpected token");
+      }
+    });
+
+    await expect(analyzeFrame({
+      backendUrl: "https://example.com",
+      accessToken: "token",
+      payload: { provider: "fake" },
+      fetchImpl: fetchMock
+    })).rejects.toThrow("Backend request failed");
+  });
 });

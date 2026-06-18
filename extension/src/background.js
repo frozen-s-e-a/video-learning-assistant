@@ -14,39 +14,58 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function handleAnalyze(payload, sender) {
-  const settings = await getSettings();
-  const image = await captureVisibleTab();
+  await openSidePanel(sender);
+  await chrome.storage.session.set({
+    latestAnalysis: null,
+    latestAnalysisError: null,
+    analysisStatus: "loading"
+  });
 
-  const result = await analyzeFrame({
-    backendUrl: settings.backendUrl,
-    accessToken: settings.accessToken,
-    payload: {
+  try {
+    const settings = await getSettings();
+    const image = await captureVisibleTab();
+
+    const result = await analyzeFrame({
+      backendUrl: settings.backendUrl,
+      accessToken: settings.accessToken,
+      payload: {
+        provider: settings.defaultProvider,
+        model: settings.defaultModel,
+        taskType: payload.taskType || settings.defaultTaskType,
+        image,
+        selection: payload.selection || null,
+        subtitle: payload.subtitle,
+        videoContext: payload.videoContext,
+        question: "Explain the current paused video frame."
+      }
+    });
+
+    await addHistoryEntry({
+      id: result.analysisId,
+      videoTitle: payload.videoContext.title,
+      videoUrl: payload.videoContext.url,
+      timeSeconds: payload.videoContext.timeSeconds,
       provider: settings.defaultProvider,
       model: settings.defaultModel,
       taskType: payload.taskType || settings.defaultTaskType,
-      image,
-      selection: payload.selection || null,
-      subtitle: payload.subtitle,
-      videoContext: payload.videoContext,
-      question: "Explain the current paused video frame."
-    }
-  });
+      question: "Explain the current paused video frame.",
+      answerSummary: result.answer.title
+    }, settings.historyLimit);
 
-  await addHistoryEntry({
-    id: result.analysisId,
-    videoTitle: payload.videoContext.title,
-    videoUrl: payload.videoContext.url,
-    timeSeconds: payload.videoContext.timeSeconds,
-    provider: settings.defaultProvider,
-    model: settings.defaultModel,
-    taskType: payload.taskType || settings.defaultTaskType,
-    question: "Explain the current paused video frame.",
-    answerSummary: result.answer.title
-  }, settings.historyLimit);
-
-  await chrome.storage.session.set({ latestAnalysis: result });
-  await openSidePanel(sender);
-  return result;
+    await chrome.storage.session.set({
+      latestAnalysis: result,
+      latestAnalysisError: null,
+      analysisStatus: "done"
+    });
+    return result;
+  } catch (error) {
+    await chrome.storage.session.set({
+      latestAnalysis: null,
+      latestAnalysisError: error.message,
+      analysisStatus: "error"
+    });
+    throw error;
+  }
 }
 
 async function openSidePanel(sender) {

@@ -22,6 +22,25 @@ function renderAnalysis(result) {
   `;
 }
 
+function renderState(state) {
+  const status = document.querySelector("#status");
+  const answer = document.querySelector("#answer");
+
+  if (state.analysisStatus === "loading") {
+    status.textContent = "Analyzing current frame...";
+    answer.innerHTML = "";
+    return;
+  }
+
+  if (state.analysisStatus === "error") {
+    status.textContent = "Analysis failed.";
+    answer.innerHTML = `<p>${escapeHtml(state.latestAnalysisError || "Unknown error")}</p>`;
+    return;
+  }
+
+  renderAnalysis(state.latestAnalysis);
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -32,8 +51,20 @@ function escapeHtml(value) {
 }
 
 async function main() {
-  const stored = await chrome.storage.session.get({ latestAnalysis: null });
-  renderAnalysis(stored.latestAnalysis);
+  const defaults = {
+    latestAnalysis: null,
+    latestAnalysisError: null,
+    analysisStatus: null
+  };
+  const stored = await chrome.storage.session.get(defaults);
+  renderState(stored);
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "session") return;
+    if (!changes.latestAnalysis && !changes.latestAnalysisError && !changes.analysisStatus) return;
+
+    chrome.storage.session.get(defaults).then(renderState);
+  });
 }
 
 main();

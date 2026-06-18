@@ -8,10 +8,18 @@ export async function analyzeFrame({ backendUrl, accessToken, payload, fetchImpl
     body: JSON.stringify(payload)
   });
 
-  const body = await response.json();
+  const body = await readJson(response);
   if (!response.ok) {
-    const message = body?.error?.message || "Backend request failed";
+    const message = body?.error?.message || body?.error || "Backend request failed";
     throw new Error(message);
   }
   return body;
+}
+
+async function readJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }

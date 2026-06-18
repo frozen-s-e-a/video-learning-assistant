@@ -5,6 +5,25 @@ def test_health_does_not_require_auth(client):
     assert response.json() == {"ok": True}
 
 
+def test_cors_allows_chrome_extension_preflight(client):
+    response = client.options(
+        "/api/analyze-frame",
+        headers={
+            "Origin": "chrome-extension://abcdef123456",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == (
+        "chrome-extension://abcdef123456"
+    )
+    assert "POST" in response.headers["access-control-allow-methods"]
+    assert "Authorization" in response.headers["access-control-allow-headers"]
+    assert "Content-Type" in response.headers["access-control-allow-headers"]
+
+
 def test_models_requires_auth(client):
     response = client.get("/api/models")
 

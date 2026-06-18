@@ -1,5 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.auth import require_token
@@ -19,6 +20,14 @@ def build_analyzer(settings: Settings = Depends(get_settings)) -> AnalyzerServic
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Video Learning Assistant")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=(
+            r"chrome-extension://.*|https?://(localhost|127\.0\.0\.1)(:\d+)?"
+        ),
+        allow_methods=["GET", "POST"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(request: Request, exc: RequestValidationError):

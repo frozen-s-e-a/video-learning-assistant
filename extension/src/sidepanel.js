@@ -66,13 +66,28 @@ async function main() {
     chrome.storage.session.get(defaults).then(renderState);
   });
 
-  document.querySelector("#selectRegion").addEventListener("click", async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) return;
-    await chrome.tabs.sendMessage(tab.id, {
-      type: "VLA_SELECT_REGION",
-      taskType: "auto"
-    });
+  document.querySelector("#selectRegion").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const status = document.querySelector("#status");
+    const answer = document.querySelector("#answer");
+
+    button.disabled = true;
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) {
+        throw new Error("No active tab found.");
+      }
+
+      await chrome.tabs.sendMessage(tab.id, {
+        type: "VLA_SELECT_REGION",
+        taskType: "auto"
+      });
+    } catch (error) {
+      status.textContent = "Unable to start region selection on this tab.";
+      answer.innerHTML = `<p>${escapeHtml(error?.message || "Unknown error")}</p>`;
+    } finally {
+      button.disabled = false;
+    }
   });
 }
 

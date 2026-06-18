@@ -1,6 +1,11 @@
+let activeSelectionPromise = null;
+
 export function startRegionSelection() {
-  return new Promise((resolve) => {
+  if (activeSelectionPromise) return activeSelectionPromise;
+
+  activeSelectionPromise = new Promise((resolve) => {
     const overlay = document.createElement("div");
+    overlay.dataset.vlaRegionOverlay = "true";
     overlay.style.cssText = [
       "position: fixed",
       "inset: 0",
@@ -10,6 +15,7 @@ export function startRegionSelection() {
     ].join(";");
 
     const box = document.createElement("div");
+    box.dataset.vlaRegionBox = "true";
     box.style.cssText = [
       "position: fixed",
       "border: 2px solid #2563eb",
@@ -21,26 +27,65 @@ export function startRegionSelection() {
 
     let startX = 0;
     let startY = 0;
+    let isDragging = false;
+    let isFinished = false;
 
-    overlay.addEventListener("mousedown", (event) => {
-      startX = event.clientX;
-      startY = event.clientY;
-      box.style.display = "block";
-      updateBox(box, startX, startY, startX, startY);
-    });
-
-    overlay.addEventListener("mousemove", (event) => {
-      if (box.style.display !== "block") return;
-      updateBox(box, startX, startY, event.clientX, event.clientY);
-    });
-
-    overlay.addEventListener("mouseup", (event) => {
-      const selection = toSelection(startX, startY, event.clientX, event.clientY);
+    function finish(selection) {
+      if (isFinished) return;
+      isFinished = true;
+      overlay.removeEventListener("mousedown", handleMouseDown);
+      overlay.removeEventListener("mousemove", handleMouseMove);
+      overlay.removeEventListener("mouseup", handleMouseUp);
+      overlay.removeEventListener("contextmenu", handleCancelEvent);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("pagehide", handleCancelEvent);
+      window.removeEventListener("blur", handleCancelEvent);
       overlay.remove();
       box.remove();
-      resolve(selection.width > 8 && selection.height > 8 ? selection : null);
-    });
+      activeSelectionPromise = null;
+      resolve(selection);
+    }
+
+    function handleMouseDown(event) {
+      event.preventDefault();
+      startX = event.clientX;
+      startY = event.clientY;
+      isDragging = true;
+      box.style.display = "block";
+      updateBox(box, startX, startY, startX, startY);
+    }
+
+    function handleMouseMove(event) {
+      if (!isDragging) return;
+      updateBox(box, startX, startY, event.clientX, event.clientY);
+    }
+
+    function handleMouseUp(event) {
+      if (!isDragging) return;
+      isDragging = false;
+      const selection = toSelection(startX, startY, event.clientX, event.clientY);
+      finish(selection.width > 8 && selection.height > 8 ? withViewportMetadata(selection) : null);
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") finish(null);
+    }
+
+    function handleCancelEvent(event) {
+      event.preventDefault?.();
+      finish(null);
+    }
+
+    overlay.addEventListener("mousedown", handleMouseDown);
+    overlay.addEventListener("mousemove", handleMouseMove);
+    overlay.addEventListener("mouseup", handleMouseUp);
+    overlay.addEventListener("contextmenu", handleCancelEvent);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("pagehide", handleCancelEvent);
+    window.addEventListener("blur", handleCancelEvent);
   });
+
+  return activeSelectionPromise;
 }
 
 function updateBox(box, x1, y1, x2, y2) {
@@ -57,5 +102,14 @@ export function toSelection(x1, y1, x2, y2) {
     y: Math.round(Math.min(y1, y2)),
     width: Math.round(Math.abs(x2 - x1)),
     height: Math.round(Math.abs(y2 - y1))
+  };
+}
+
+export function withViewportMetadata(selection, win = window) {
+  return {
+    ...selection,
+    devicePixelRatio: win.devicePixelRatio,
+    viewportWidth: win.innerWidth,
+    viewportHeight: win.innerHeight
   };
 }

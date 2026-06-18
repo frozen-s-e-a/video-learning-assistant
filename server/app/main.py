@@ -1,11 +1,36 @@
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.auth import require_token
+from app.config import Settings, get_settings
+from app.providers.registry import build_provider_registry
+from app.schemas import AnalyzeFrameRequest
+from app.services.analyzer import AnalyzerService
+from app.services.ocr import OcrService
+
+
+def build_analyzer(settings: Settings = Depends(get_settings)) -> AnalyzerService:
+    return AnalyzerService(
+        providers=build_provider_registry(settings),
+        ocr_service=OcrService(enabled=False),
+    )
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Video Learning Assistant")
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(request: Request, exc: RequestValidationError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": {
+                    "code": "INVALID_REQUEST",
+                    "message": "Request validation failed",
+                }
+            },
+        )
 
     @app.exception_handler(HTTPException)
     async def handle_http_error(request: Request, exc: HTTPException):
@@ -30,8 +55,15 @@ def create_app() -> FastAPI:
         return {"ok": True}
 
     @app.get("/api/models", dependencies=[Depends(require_token)])
-    def models() -> dict[str, list[dict[str, object]]]:
-        return {"providers": []}
+    def models(analyzer: AnalyzerService = Depends(build_analyzer)):
+        return {"providers": analyzer.models()}
+
+    @app.post("/api/analyze-frame", dependencies=[Depends(require_token)])
+    async def analyze_frame(
+        request: AnalyzeFrameRequest,
+        analyzer: AnalyzerService = Depends(build_analyzer),
+    ):
+        return await analyzer.analyze(request)
 
     return app
 

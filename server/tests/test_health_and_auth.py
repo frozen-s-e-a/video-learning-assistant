@@ -33,4 +33,14 @@ def test_models_accepts_valid_token(client):
     )
 
     assert response.status_code == 200
-    assert response.json() == {"providers": []}
+    assert response.json() == {
+        "providers": [
+            {
+                "id": "fake",
+                "label": "Fake",
+                "models": ["fake-vision", "fake-text"],
+                "vision": True,
+                "enabled": True,
+            }
+        ]
+    }

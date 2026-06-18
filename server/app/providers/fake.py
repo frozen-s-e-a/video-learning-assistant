@@ -20,6 +20,9 @@ class FakeProvider(BaseProvider):
         enabled=True,
     )
 
+    def supports_vision(self, model: str) -> bool:
+        return model == "fake-vision"
+
     async def analyze_with_image(
         self, request: AnalyzeFrameRequest
     ) -> AnalyzeFrameResponse:

@@ -1,5 +1,7 @@
 import base64
 
+from app.services.analyzer import MAX_BASE64_CHARS, MAX_IMAGE_BYTES
+
 
 def auth_headers():
     return {"Authorization": "Bearer test-token"}
@@ -79,3 +81,72 @@ def test_unknown_provider_returns_model_not_configured(client):
 
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "MODEL_NOT_CONFIGURED"
+
+
+def test_unknown_model_returns_model_not_configured(client):
+    response = client.post(
+        "/api/analyze-frame",
+        headers=auth_headers(),
+        json=analyze_payload(model="missing"),
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"] == {
+        "code": "MODEL_NOT_CONFIGURED",
+        "message": "Selected model is not configured",
+    }
+
+
+def test_fake_text_model_routes_to_ocr(client):
+    response = client.post(
+        "/api/analyze-frame",
+        headers=auth_headers(),
+        json=analyze_payload(model="fake-text"),
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "OCR_NOT_CONFIGURED"
+
+
+def test_analyze_frame_rejects_invalid_base64(client):
+    payload = analyze_payload()
+    payload["image"]["data"] = "not valid base64"
+
+    response = client.post(
+        "/api/analyze-frame",
+        headers=auth_headers(),
+        json=payload,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "INVALID_REQUEST"
+
+
+def test_analyze_frame_rejects_oversized_base64_before_decoding(client):
+    payload = analyze_payload()
+    payload["image"]["data"] = "A" * (MAX_BASE64_CHARS + 1)
+
+    response = client.post(
+        "/api/analyze-frame",
+        headers=auth_headers(),
+        json=payload,
+    )
+
+    assert response.status_code == 413
+    assert response.json()["error"]["code"] == "IMAGE_TOO_LARGE"
+
+
+def test_analyze_frame_rejects_oversized_decoded_image(client):
+    payload = analyze_payload()
+    payload["image"]["data"] = base64.b64encode(b"\0" * (MAX_IMAGE_BYTES + 1)).decode(
+        "ascii"
+    )
+
+    response = client.post(
+        "/api/analyze-frame",
+        headers=auth_headers(),
+        json=payload,
+    )
+
+    assert response.status_code == 413
+    assert response.json()["error"]["code"] == "IMAGE_TOO_LARGE"

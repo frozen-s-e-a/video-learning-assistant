@@ -17,6 +17,18 @@ def test_models_requires_auth(client):
     }
 
 
+def test_analyze_frame_requires_auth(client):
+    response = client.post("/api/analyze-frame", json={})
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "error": {
+            "code": "UNAUTHORIZED",
+            "message": "Missing or invalid authorization token",
+        }
+    }
+
+
 def test_models_rejects_wrong_token(client):
     response = client.get(
         "/api/models",

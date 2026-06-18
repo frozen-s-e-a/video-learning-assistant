@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -14,5 +16,5 @@ def require_token(
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise api_error(401, "UNAUTHORIZED", "Missing or invalid authorization token")
 
-    if credentials.credentials != settings.app_access_token:
+    if not secrets.compare_digest(credentials.credentials, settings.app_access_token):
         raise api_error(401, "UNAUTHORIZED", "Missing or invalid authorization token")

@@ -24,3 +24,13 @@ def test_models_rejects_wrong_token(client):
     )
 
     assert response.status_code == 401
+
+
+def test_models_accepts_valid_token(client):
+    response = client.get(
+        "/api/models",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"providers": []}

@@ -1,10 +1,21 @@
 import base64
 
+from fastapi.testclient import TestClient
+
 from app.services.analyzer import MAX_BASE64_CHARS, MAX_IMAGE_BYTES
 
 
 def auth_headers():
     return {"Authorization": "Bearer test-token"}
+
+
+def make_client(monkeypatch):
+    monkeypatch.setenv("APP_ACCESS_TOKEN", "test-token")
+    from app.config import get_settings
+    from app.main import create_app
+
+    get_settings.cache_clear()
+    return TestClient(create_app())
 
 
 def tiny_jpeg_base64():
@@ -103,6 +114,20 @@ def test_fake_text_model_routes_to_ocr(client):
         headers=auth_headers(),
         json=analyze_payload(model="fake-text"),
     )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "OCR_NOT_CONFIGURED"
+
+
+def test_non_vision_provider_without_ocr_returns_ocr_not_configured(monkeypatch):
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "deepseek-key")
+
+    with make_client(monkeypatch) as client:
+        response = client.post(
+            "/api/analyze-frame",
+            headers=auth_headers(),
+            json=analyze_payload(provider="deepseek", model="deepseek-chat"),
+        )
 
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "OCR_NOT_CONFIGURED"

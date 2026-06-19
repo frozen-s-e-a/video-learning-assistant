@@ -155,7 +155,7 @@ async function handleFollowUp(payload) {
     const currentSession = await chrome.storage.session.get({
       latestAnalysis: null
     });
-    if (currentSession.latestAnalysis?.analysisId !== analysisId) {
+    if (analysisId && currentSession.latestAnalysis?.analysisId !== analysisId) {
       throw error;
     }
 

@@ -269,4 +269,25 @@ describe("background analysis flow", () => {
       followUpStatus: "error"
     });
   });
+
+  it("stores a follow-up error when no analysis is available", async () => {
+    testState.latestAnalysis = null;
+    const sendResponse = vi.fn();
+
+    const returnValue = testState.listener({
+      type: "VLA_FOLLOW_UP",
+      payload: { message: "Why async?" }
+    }, { tab: { windowId: 7 } }, sendResponse);
+
+    expect(returnValue).toBe(true);
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({
+      ok: false,
+      error: "No analysis is available for follow-up."
+    }));
+    expect(chrome.storage.session.set).toHaveBeenLastCalledWith({
+      latestFollowUp: null,
+      latestFollowUpError: "No analysis is available for follow-up.",
+      followUpStatus: "error"
+    });
+  });
 });

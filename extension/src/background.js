@@ -44,7 +44,10 @@ async function handleAnalyze(payload, sender) {
   await chrome.storage.session.set({
     latestAnalysis: null,
     latestAnalysisError: null,
-    analysisStatus: "loading"
+    analysisStatus: "loading",
+    latestFollowUp: null,
+    latestFollowUpError: null,
+    followUpStatus: null
   });
 
   try {
@@ -81,14 +84,20 @@ async function handleAnalyze(payload, sender) {
     await chrome.storage.session.set({
       latestAnalysis: result,
       latestAnalysisError: null,
-      analysisStatus: "done"
+      analysisStatus: "done",
+      latestFollowUp: null,
+      latestFollowUpError: null,
+      followUpStatus: null
     });
     return result;
   } catch (error) {
     await chrome.storage.session.set({
       latestAnalysis: null,
       latestAnalysisError: error.message,
-      analysisStatus: "error"
+      analysisStatus: "error",
+      latestFollowUp: null,
+      latestFollowUpError: null,
+      followUpStatus: null
     });
     throw error;
   }

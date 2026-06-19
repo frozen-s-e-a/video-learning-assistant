@@ -125,12 +125,18 @@ describe("background analysis flow", () => {
     expect(chrome.storage.session.set).toHaveBeenNthCalledWith(1, {
       latestAnalysis: null,
       latestAnalysisError: null,
-      analysisStatus: "loading"
+      analysisStatus: "loading",
+      latestFollowUp: null,
+      latestFollowUpError: null,
+      followUpStatus: null
     });
     expect(chrome.storage.session.set).toHaveBeenLastCalledWith({
       latestAnalysis: testState.result,
       latestAnalysisError: null,
-      analysisStatus: "done"
+      analysisStatus: "done",
+      latestFollowUp: null,
+      latestFollowUpError: null,
+      followUpStatus: null
     });
   });
 

@@ -104,6 +104,8 @@ async function handleAnalyze(payload, sender) {
 }
 
 async function handleFollowUp(payload) {
+  let analysisId = null;
+
   await chrome.storage.session.set({
     latestFollowUp: null,
     latestFollowUpError: null,
@@ -116,7 +118,7 @@ async function handleFollowUp(payload) {
       latestAnalysis: null
     });
     const latestAnalysis = session.latestAnalysis;
-    const analysisId = payload.analysisId || latestAnalysis?.analysisId;
+    analysisId = payload.analysisId || latestAnalysis?.analysisId;
 
     if (!analysisId) {
       throw new Error("No analysis is available for follow-up.");
@@ -150,6 +152,13 @@ async function handleFollowUp(payload) {
     });
     return result;
   } catch (error) {
+    const currentSession = await chrome.storage.session.get({
+      latestAnalysis: null
+    });
+    if (currentSession.latestAnalysis?.analysisId !== analysisId) {
+      throw error;
+    }
+
     await chrome.storage.session.set({
       latestFollowUp: null,
       latestFollowUpError: error.message,

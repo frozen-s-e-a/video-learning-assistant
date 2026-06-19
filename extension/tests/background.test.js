@@ -238,4 +238,35 @@ describe("background analysis flow", () => {
       followUpStatus: "done"
     });
   });
+
+  it("does not store a stale follow-up error after a newer analysis replaces it", async () => {
+    testState.followUpDeferredPromise = new Promise((resolve, reject) => {
+      testState.followUpDeferred = reject;
+    });
+    const sendResponse = vi.fn();
+
+    const returnValue = testState.listener({
+      type: "VLA_FOLLOW_UP",
+      payload: { message: "Why async?" }
+    }, { tab: { windowId: 7 } }, sendResponse);
+
+    expect(returnValue).toBe(true);
+    await vi.waitFor(() => expect(testState.events).toContain("follow-up"));
+
+    testState.latestAnalysis = {
+      ...testState.result,
+      analysisId: "analysis-2"
+    };
+    testState.followUpDeferred(new Error("Old follow-up failed"));
+
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({
+      ok: false,
+      error: "Old follow-up failed"
+    }));
+    expect(chrome.storage.session.set).not.toHaveBeenLastCalledWith({
+      latestFollowUp: null,
+      latestFollowUpError: "Old follow-up failed",
+      followUpStatus: "error"
+    });
+  });
 });

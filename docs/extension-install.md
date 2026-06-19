@@ -10,5 +10,8 @@
 8. Open a Bilibili or YouTube tutorial video.
 9. Pause the video.
 10. Click "Analyze current frame".
+11. To analyze only part of the frame, open the side panel and click "Select region and analyze".
 
-The first version stores recent analysis history in browser local storage and does not store screenshots by default.
+The first version stores recent analysis history only in browser local storage and does not store screenshots by default.
+
+Follow-up questions work with the fake provider. Real provider shells are listed only when their API keys are configured, but provider API calls are not implemented yet and return `PROVIDER_NOT_IMPLEMENTED`.

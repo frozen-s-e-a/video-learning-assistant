@@ -5,6 +5,9 @@ async function importSidepanel() {
   document.body.innerHTML = `
     <p id="status"></p>
     <div id="answer"></div>
+    <textarea id="question"></textarea>
+    <button id="ask">Ask</button>
+    <div id="followUp"></div>
     <button id="selectRegion">Select region</button>
   `;
 
@@ -16,6 +19,19 @@ async function importSidepanel() {
       onChanged: {
         addListener: vi.fn()
       }
+    },
+    runtime: {
+      sendMessage: vi.fn(async () => ({
+        ok: true,
+        result: {
+          analysisId: "analysis-1",
+          answer: {
+            title: "Follow-up answer",
+            sections: [{ heading: "Answer", content: "Async keeps the UI responsive." }]
+          },
+          suggestedQuestions: ["Can you show an example?"]
+        }
+      }))
     },
     tabs: {
       query: vi.fn(async () => [{ id: 123 }]),
@@ -46,5 +62,21 @@ describe("sidepanel region selection", () => {
     expect(document.querySelector("#status").textContent).toBe("Unable to start region selection on this tab.");
     expect(document.querySelector("#answer").textContent).toContain("No receiving end");
     expect(button.disabled).toBe(false);
+  });
+
+  it("sends an ask message and renders the follow-up answer", async () => {
+    await importSidepanel();
+
+    document.querySelector("#question").value = "Why async?";
+    document.querySelector("#ask").click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: "VLA_FOLLOW_UP",
+      payload: { message: "Why async?" }
+    });
+    expect(document.querySelector("#followUp").textContent).toContain("Follow-up answer");
+    expect(document.querySelector("#followUp").textContent).toContain("Async keeps the UI responsive.");
   });
 });

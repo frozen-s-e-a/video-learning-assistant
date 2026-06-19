@@ -10,6 +10,10 @@ async function initializeVideoLearningAssistant() {
   let detachCurrent = null;
   let pauseTimer = null;
   let regionSelectionActive = false;
+  let showPauseButton = true;
+
+  const storedSettings = await chrome.storage.local.get({ showPauseButton: true });
+  showPauseButton = storedSettings.showPauseButton !== false;
 
   function sendAnalyzeMessage(taskType, selection) {
     const adapter = activeAdapter ?? createAdapter();
@@ -52,6 +56,7 @@ async function initializeVideoLearningAssistant() {
   function showAfterDebounce() {
     clearTimeout(pauseTimer);
     pauseTimer = setTimeout(() => {
+      if (!showPauseButton) return;
       const video = activeAdapter?.getVideoElement();
       if (video?.paused) pauseButton.show();
     }, 300);
@@ -98,6 +103,19 @@ async function initializeVideoLearningAssistant() {
     };
     return true;
   }
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local" || !changes.showPauseButton) return;
+
+    showPauseButton = changes.showPauseButton.newValue !== false;
+    if (showPauseButton) {
+      const video = activeAdapter?.getVideoElement();
+      if (video?.paused) showAfterDebounce();
+      return;
+    }
+
+    hideButton();
+  });
 
   const observer = new MutationObserver(() => {
     tryAttach();

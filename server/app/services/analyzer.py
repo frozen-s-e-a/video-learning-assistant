@@ -3,7 +3,12 @@ from binascii import Error as Base64Error
 
 from app.errors import api_error
 from app.providers.base import BaseProvider
-from app.schemas import AnalyzeFrameRequest, AnalyzeFrameResponse
+from app.schemas import (
+    AnalyzeFrameRequest,
+    AnalyzeFrameResponse,
+    FollowUpRequest,
+    FollowUpResponse,
+)
 from app.services.ocr import OcrService
 
 MAX_IMAGE_BYTES = 6 * 1024 * 1024
@@ -34,6 +39,16 @@ class AnalyzerService:
 
         extracted_text = await self.ocr_service.extract_text(request)
         return await provider.analyze_with_text(request, extracted_text)
+
+    async def follow_up(self, request: FollowUpRequest) -> FollowUpResponse:
+        provider = self.providers.get(request.provider)
+        if provider is None:
+            raise api_error(400, "MODEL_NOT_CONFIGURED", "Selected provider is not configured")
+
+        if request.model not in provider.info.models:
+            raise api_error(400, "MODEL_NOT_CONFIGURED", "Selected model is not configured")
+
+        return await provider.follow_up(request)
 
     def models(self) -> list[dict[str, object]]:
         return [provider.info.model_dump() for provider in self.providers.values()]

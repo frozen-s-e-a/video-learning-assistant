@@ -1,8 +1,9 @@
-from app.providers.fake import FakeProvider
+from app.providers.not_implemented import NotImplementedProvider
 from app.schemas import ProviderInfo
 
 
-class MimoProvider(FakeProvider):
+class MimoProvider(NotImplementedProvider):
+    provider_name = "MiMo"
     info = ProviderInfo(
         id="mimo",
         label="MiMo",

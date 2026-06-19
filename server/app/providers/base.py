@@ -1,6 +1,12 @@
 from abc import ABC, abstractmethod
 
-from app.schemas import AnalyzeFrameRequest, AnalyzeFrameResponse, ProviderInfo
+from app.schemas import (
+    AnalyzeFrameRequest,
+    AnalyzeFrameResponse,
+    FollowUpRequest,
+    FollowUpResponse,
+    ProviderInfo,
+)
 
 
 class BaseProvider(ABC):
@@ -19,4 +25,8 @@ class BaseProvider(ABC):
     async def analyze_with_text(
         self, request: AnalyzeFrameRequest, extracted_text: str
     ) -> AnalyzeFrameResponse:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def follow_up(self, request: FollowUpRequest) -> FollowUpResponse:
         raise NotImplementedError

@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from app.auth import require_token
 from app.config import Settings, get_settings
 from app.providers.registry import build_provider_registry
-from app.schemas import AnalyzeFrameRequest
+from app.schemas import AnalyzeFrameRequest, FollowUpRequest
 from app.services.analyzer import AnalyzerService
 from app.services.ocr import OcrService
 
@@ -73,6 +73,13 @@ def create_app() -> FastAPI:
         analyzer: AnalyzerService = Depends(build_analyzer),
     ):
         return await analyzer.analyze(request)
+
+    @app.post("/api/follow-up", dependencies=[Depends(require_token)])
+    async def follow_up(
+        request: FollowUpRequest,
+        analyzer: AnalyzerService = Depends(build_analyzer),
+    ):
+        return await analyzer.follow_up(request)
 
     return app
 

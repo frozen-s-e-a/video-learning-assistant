@@ -1,8 +1,9 @@
-from app.providers.fake import FakeProvider
+from app.providers.not_implemented import NotImplementedProvider
 from app.schemas import ProviderInfo
 
 
-class OpenAIProvider(FakeProvider):
+class OpenAIProvider(NotImplementedProvider):
+    provider_name = "OpenAI"
     info = ProviderInfo(
         id="openai",
         label="GPT",

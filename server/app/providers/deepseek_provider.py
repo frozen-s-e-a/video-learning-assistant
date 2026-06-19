@@ -1,8 +1,9 @@
-from app.providers.fake import FakeProvider
+from app.providers.not_implemented import NotImplementedProvider
 from app.schemas import ProviderInfo
 
 
-class DeepSeekProvider(FakeProvider):
+class DeepSeekProvider(NotImplementedProvider):
+    provider_name = "DeepSeek"
     info = ProviderInfo(
         id="deepseek",
         label="DeepSeek",

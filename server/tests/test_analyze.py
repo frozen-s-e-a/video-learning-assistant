@@ -2,6 +2,7 @@ import base64
 
 from fastapi.testclient import TestClient
 
+from app.schemas import AnalyzeFrameRequest
 from app.services.analyzer import MAX_BASE64_CHARS, MAX_IMAGE_BYTES
 
 
@@ -83,6 +84,47 @@ def test_analyze_frame_with_fake_provider(client):
     assert body["suggestedQuestions"] == ["Why is async used here?"]
 
 
+def test_follow_up_with_fake_provider(client):
+    response = client.post(
+        "/api/follow-up",
+        headers=auth_headers(),
+        json={
+            "analysisId": "analysis-1",
+            "provider": "fake",
+            "model": "fake-vision",
+            "message": "Why does this use async?",
+            "context": {"answerTitle": "Fake analysis"},
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["analysisId"] == "analysis-1"
+    assert body["answer"]["title"] == "Fake follow-up"
+    assert "Why does this use async?" in body["answer"]["sections"][0]["content"]
+    assert body["suggestedQuestions"] == ["Can you show a simpler example?"]
+
+
+def test_analyze_selection_accepts_viewport_metadata_at_schema_level():
+    payload = analyze_payload()
+    payload["selection"] = {
+        "x": 10,
+        "y": 20,
+        "width": 100,
+        "height": 60,
+        "devicePixelRatio": 1.5,
+        "viewportWidth": 1280,
+        "viewportHeight": 720,
+    }
+
+    request = AnalyzeFrameRequest.model_validate(payload)
+
+    assert request.selection is not None
+    assert request.selection.devicePixelRatio == 1.5
+    assert request.selection.viewportWidth == 1280
+    assert request.selection.viewportHeight == 720
+
+
 def test_unknown_provider_returns_model_not_configured(client):
     response = client.post(
         "/api/analyze-frame",
@@ -105,6 +147,23 @@ def test_unknown_model_returns_model_not_configured(client):
     assert response.json()["error"] == {
         "code": "MODEL_NOT_CONFIGURED",
         "message": "Selected model is not configured",
+    }
+
+
+def test_configured_openai_analysis_returns_provider_not_implemented(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-key")
+
+    with make_client(monkeypatch) as client:
+        response = client.post(
+            "/api/analyze-frame",
+            headers=auth_headers(),
+            json=analyze_payload(provider="openai", model="gpt-4o"),
+        )
+
+    assert response.status_code == 501
+    assert response.json()["error"] == {
+        "code": "PROVIDER_NOT_IMPLEMENTED",
+        "message": "OpenAI provider is not implemented yet",
     }
 
 

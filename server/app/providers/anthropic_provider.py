@@ -1,8 +1,9 @@
-from app.providers.fake import FakeProvider
+from app.providers.not_implemented import NotImplementedProvider
 from app.schemas import ProviderInfo
 
 
-class AnthropicProvider(FakeProvider):
+class AnthropicProvider(NotImplementedProvider):
+    provider_name = "Anthropic"
     info = ProviderInfo(
         id="anthropic",
         label="Claude",

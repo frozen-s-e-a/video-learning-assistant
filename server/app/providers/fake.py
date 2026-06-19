@@ -7,6 +7,8 @@ from app.schemas import (
     AnswerPayload,
     AnswerSection,
     ExtractedContent,
+    FollowUpRequest,
+    FollowUpResponse,
     ProviderInfo,
 )
 
@@ -53,3 +55,18 @@ class FakeProvider(BaseProvider):
         response.mode = "ocr_text"
         response.extracted.code = extracted_text
         return response
+
+    async def follow_up(self, request: FollowUpRequest) -> FollowUpResponse:
+        return FollowUpResponse(
+            analysisId=request.analysisId,
+            answer=AnswerPayload(
+                title="Fake follow-up",
+                sections=[
+                    AnswerSection(
+                        heading="Answer",
+                        content=f"Fake follow-up answer for: {request.message}",
+                    )
+                ],
+            ),
+            suggestedQuestions=["Can you show a simpler example?"],
+        )

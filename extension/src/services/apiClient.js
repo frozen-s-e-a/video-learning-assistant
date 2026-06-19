@@ -1,5 +1,23 @@
 export async function analyzeFrame({ backendUrl, accessToken, payload, fetchImpl = fetch }) {
-  const response = await fetchImpl(`${backendUrl.replace(/\/$/, "")}/api/analyze-frame`, {
+  return postJson({
+    url: `${backendUrl.replace(/\/$/, "")}/api/analyze-frame`,
+    accessToken,
+    payload,
+    fetchImpl
+  });
+}
+
+export async function sendFollowUp({ backendUrl, accessToken, payload, fetchImpl = fetch }) {
+  return postJson({
+    url: `${backendUrl.replace(/\/$/, "")}/api/follow-up`,
+    accessToken,
+    payload,
+    fetchImpl
+  });
+}
+
+async function postJson({ url, accessToken, payload, fetchImpl }) {
+  const response = await fetchImpl(url, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${accessToken}`,

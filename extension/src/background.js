@@ -1,17 +1,43 @@
-import { analyzeFrame } from "./services/apiClient.js";
+import { analyzeFrame, sendFollowUp } from "./services/apiClient.js";
 import { captureVisibleTab } from "./services/capture.js";
 import { addHistoryEntry } from "./services/history.js";
 import { getSettings } from "./services/settings.js";
 
+const inFlightAnalyze = new Set();
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type !== "VLA_ANALYZE_CURRENT_FRAME") return false;
+  if (message.type === "VLA_ANALYZE_CURRENT_FRAME") {
+    const analyzeKey = getAnalyzeKey(sender);
+    if (inFlightAnalyze.has(analyzeKey)) {
+      sendResponse({ ok: false, error: "Analysis is already in progress" });
+      return true;
+    }
 
-  handleAnalyze(message.payload, sender)
-    .then((result) => sendResponse({ ok: true, result }))
-    .catch((error) => sendResponse({ ok: false, error: error.message }));
+    inFlightAnalyze.add(analyzeKey);
+    handleAnalyze(message.payload, sender)
+      .then((result) => sendResponse({ ok: true, result }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }))
+      .finally(() => {
+        inFlightAnalyze.delete(analyzeKey);
+      });
 
-  return true;
+    return true;
+  }
+
+  if (message.type === "VLA_FOLLOW_UP") {
+    handleFollowUp(message.payload)
+      .then((result) => sendResponse({ ok: true, result }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+
+    return true;
+  }
+
+  return false;
 });
+
+function getAnalyzeKey(sender) {
+  return String(sender?.tab?.id ?? "global");
+}
 
 async function handleAnalyze(payload, sender) {
   await openSidePanel(sender);
@@ -63,6 +89,55 @@ async function handleAnalyze(payload, sender) {
       latestAnalysis: null,
       latestAnalysisError: error.message,
       analysisStatus: "error"
+    });
+    throw error;
+  }
+}
+
+async function handleFollowUp(payload) {
+  await chrome.storage.session.set({
+    latestFollowUp: null,
+    latestFollowUpError: null,
+    followUpStatus: "loading"
+  });
+
+  try {
+    const settings = await getSettings();
+    const session = await chrome.storage.session.get({
+      latestAnalysis: null
+    });
+    const latestAnalysis = session.latestAnalysis;
+    const analysisId = payload.analysisId || latestAnalysis?.analysisId;
+
+    if (!analysisId) {
+      throw new Error("No analysis is available for follow-up.");
+    }
+
+    const result = await sendFollowUp({
+      backendUrl: settings.backendUrl,
+      accessToken: settings.accessToken,
+      payload: {
+        analysisId,
+        provider: settings.defaultProvider,
+        model: settings.defaultModel,
+        message: payload.message,
+        context: {
+          latestAnalysis
+        }
+      }
+    });
+
+    await chrome.storage.session.set({
+      latestFollowUp: result,
+      latestFollowUpError: null,
+      followUpStatus: "done"
+    });
+    return result;
+  } catch (error) {
+    await chrome.storage.session.set({
+      latestFollowUp: null,
+      latestFollowUpError: error.message,
+      followUpStatus: "error"
     });
     throw error;
   }

@@ -17,6 +17,9 @@ class Selection(BaseModel):
     y: int = Field(ge=0)
     width: int = Field(gt=0)
     height: int = Field(gt=0)
+    devicePixelRatio: float | None = Field(default=None, gt=0)
+    viewportWidth: int | None = Field(default=None, gt=0)
+    viewportHeight: int | None = Field(default=None, gt=0)
 
 
 class SubtitlePayload(BaseModel):
@@ -79,5 +82,11 @@ class AnalyzeFrameResponse(BaseModel):
     detectedType: DetectedType
     mode: AnalysisMode
     extracted: ExtractedContent
+    answer: AnswerPayload
+    suggestedQuestions: list[str] = Field(default_factory=list)
+
+
+class FollowUpResponse(BaseModel):
+    analysisId: str
     answer: AnswerPayload
     suggestedQuestions: list[str] = Field(default_factory=list)

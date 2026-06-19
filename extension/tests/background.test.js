@@ -5,6 +5,9 @@ const testState = vi.hoisted(() => ({
   listener: null,
   analyzeDeferred: null,
   analyzeDeferredPromise: null,
+  followUpDeferred: null,
+  followUpDeferredPromise: null,
+  latestAnalysis: null,
   result: {
     analysisId: "analysis-1",
     detectedType: "slide",
@@ -47,6 +50,9 @@ vi.mock("../src/services/apiClient.js", () => ({
   }),
   sendFollowUp: vi.fn(async () => {
     testState.events.push("follow-up");
+    if (testState.followUpDeferredPromise) {
+      return testState.followUpDeferredPromise;
+    }
     return testState.followUpResult;
   })
 }));
@@ -64,6 +70,9 @@ describe("background analysis flow", () => {
     testState.listener = null;
     testState.analyzeDeferred = null;
     testState.analyzeDeferredPromise = null;
+    testState.followUpDeferred = null;
+    testState.followUpDeferredPromise = null;
+    testState.latestAnalysis = testState.result;
 
     globalThis.chrome = {
       runtime: {
@@ -77,7 +86,7 @@ describe("background analysis flow", () => {
         session: {
           get: vi.fn(async (defaults) => ({
             ...defaults,
-            latestAnalysis: testState.result
+            latestAnalysis: testState.latestAnalysis
           })),
           set: vi.fn(async (value) => {
             testState.events.push(`storage:${value.analysisStatus || value.followUpStatus}`);
@@ -196,6 +205,37 @@ describe("background analysis flow", () => {
     expect(sendResponse).toHaveBeenCalledWith({
       ok: true,
       result: testState.followUpResult
+    });
+  });
+
+  it("does not store a stale follow-up after a newer analysis replaces it", async () => {
+    testState.followUpDeferredPromise = new Promise((resolve) => {
+      testState.followUpDeferred = resolve;
+    });
+    const sendResponse = vi.fn();
+
+    const returnValue = testState.listener({
+      type: "VLA_FOLLOW_UP",
+      payload: { message: "Why async?" }
+    }, { tab: { windowId: 7 } }, sendResponse);
+
+    expect(returnValue).toBe(true);
+    await vi.waitFor(() => expect(testState.events).toContain("follow-up"));
+
+    testState.latestAnalysis = {
+      ...testState.result,
+      analysisId: "analysis-2"
+    };
+    testState.followUpDeferred(testState.followUpResult);
+
+    await vi.waitFor(() => expect(sendResponse).toHaveBeenCalledWith({
+      ok: true,
+      result: testState.followUpResult
+    }));
+    expect(chrome.storage.session.set).not.toHaveBeenLastCalledWith({
+      latestFollowUp: testState.followUpResult,
+      latestFollowUpError: null,
+      followUpStatus: "done"
     });
   });
 });

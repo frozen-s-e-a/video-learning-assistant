@@ -136,6 +136,13 @@ async function handleFollowUp(payload) {
       }
     });
 
+    const currentSession = await chrome.storage.session.get({
+      latestAnalysis: null
+    });
+    if (currentSession.latestAnalysis?.analysisId !== analysisId) {
+      return result;
+    }
+
     await chrome.storage.session.set({
       latestFollowUp: result,
       latestFollowUpError: null,

@@ -39,7 +39,6 @@ http://127.0.0.1:8787/health
 Example setup and service command from the copied `server` directory:
 
 ```bash
-cd server
 cp .env.example .env
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8787
 ```

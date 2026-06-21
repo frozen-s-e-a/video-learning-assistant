@@ -45,7 +45,7 @@ function renderFollowUpState(state) {
   }
 
   if (state.followUpStatus === "error") {
-    followUp.innerHTML = `<p>${escapeHtml(state.latestFollowUpError || "Unknown error")}</p>`;
+    followUp.innerHTML = `<p class="error">${escapeHtml(state.latestFollowUpError || "Unknown error")}</p>`;
     return;
   }
 
@@ -69,7 +69,7 @@ function renderState(state) {
 
   if (state.analysisStatus === "error") {
     status.textContent = "Analysis failed.";
-    answer.innerHTML = `<p>${escapeHtml(state.latestAnalysisError || "Unknown error")}</p>`;
+    answer.innerHTML = `<p class="error">${escapeHtml(state.latestAnalysisError || "Unknown error")}</p>`;
     return;
   }
 
@@ -119,7 +119,7 @@ async function main() {
     const message = question.value.trim();
 
     if (!message) {
-      followUp.innerHTML = "<p>Enter a follow-up question.</p>";
+      followUp.innerHTML = "<p class=\"error\">Enter a follow-up question.</p>";
       return;
     }
 
@@ -137,7 +137,7 @@ async function main() {
 
       renderAnswerPayload(followUp, response.result);
     } catch (error) {
-      followUp.innerHTML = `<p>${escapeHtml(error?.message || "Unknown error")}</p>`;
+      followUp.innerHTML = `<p class="error">${escapeHtml(error?.message || "Unknown error")}</p>`;
     } finally {
       button.disabled = false;
     }
@@ -161,7 +161,7 @@ async function main() {
       });
     } catch (error) {
       status.textContent = "Unable to start region selection on this tab.";
-      answer.innerHTML = `<p>${escapeHtml(error?.message || "Unknown error")}</p>`;
+      answer.innerHTML = `<p class="error">${escapeHtml(error?.message || "Unknown error")}</p>`;
     } finally {
       button.disabled = false;
     }

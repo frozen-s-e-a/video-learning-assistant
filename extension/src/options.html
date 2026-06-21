@@ -4,38 +4,135 @@
     <meta charset="utf-8">
     <title>Video Learning Assistant Settings</title>
     <style>
-      body { font: 14px system-ui, sans-serif; max-width: 720px; margin: 32px auto; }
-      label { display: block; margin: 14px 0; }
-      input, select { width: 100%; padding: 8px; margin-top: 4px; }
-      button { padding: 8px 12px; }
-      #status { margin-left: 8px; }
+      :root {
+        color-scheme: light;
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #dbe3ef;
+        --primary: #2563eb;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main {
+        width: min(760px, calc(100vw - 32px));
+        margin: 32px auto;
+        padding: 28px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+        box-shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 28px;
+        line-height: 1.15;
+      }
+      .description {
+        margin: 0 0 24px;
+        color: var(--muted);
+      }
+      label {
+        display: block;
+        margin: 16px 0 0;
+        font-weight: 650;
+      }
+      input:not([type="checkbox"]),
+      select {
+        display: block;
+        width: 100%;
+        height: 42px;
+        margin-top: 6px;
+        padding: 0 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+        color: var(--text);
+        font: inherit;
+      }
+      input:focus,
+      select:focus {
+        outline: 2px solid #bfdbfe;
+        border-color: var(--primary);
+      }
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 18px;
+        font-weight: 650;
+      }
+      .checkbox-row input {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+      }
+      .hint {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 24px;
+      }
+      button {
+        height: 40px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--primary);
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+      }
+      button:hover { background: #1d4ed8; }
+      #status { color: #16a34a; font-weight: 650; }
     </style>
   </head>
   <body>
-    <h1>Video Learning Assistant</h1>
-    <label>Backend URL <input id="backendUrl"></label>
-    <label>Access Token <input id="accessToken" type="password"></label>
-    <label>Provider
-      <select id="defaultProvider">
-        <option value="fake">Fake</option>
-        <option value="openai">GPT</option>
-        <option value="anthropic">Claude</option>
-        <option value="deepseek">DeepSeek</option>
-        <option value="mimo">MiMo</option>
-      </select>
-    </label>
-    <label>Model <input id="defaultModel"></label>
-    <label>Task Type
-      <select id="defaultTaskType">
-        <option value="auto">Auto</option>
-        <option value="code">Code</option>
-        <option value="error">Error</option>
-        <option value="concept">Concept</option>
-      </select>
-    </label>
-    <label>History Limit <input id="historyLimit" type="number" min="1" max="500"></label>
-    <label><input id="showPauseButton" type="checkbox"> Show pause button</label>
-    <button id="save">Save</button><span id="status"></span>
+    <main>
+      <h1>Video Learning Assistant</h1>
+      <p class="description">Configure the backend used by the browser extension.</p>
+
+      <label>Backend URL <input id="backendUrl" placeholder="http://127.0.0.1:8787"></label>
+      <label>Access Token <input id="accessToken" type="password" autocomplete="off"></label>
+      <label>Provider
+        <select id="defaultProvider">
+          <option value="fake">Fake (local test)</option>
+          <option value="openai">GPT (API pending)</option>
+          <option value="anthropic">Claude (API pending)</option>
+          <option value="deepseek">DeepSeek (API pending)</option>
+          <option value="mimo">MiMo (API pending)</option>
+        </select>
+      </label>
+      <p class="hint">For the current MVP, choose Fake to run the full analysis flow.</p>
+      <label>Model <input id="defaultModel" placeholder="fake-vision"></label>
+      <label>Task Type
+        <select id="defaultTaskType">
+          <option value="auto">Auto</option>
+          <option value="code">Code</option>
+          <option value="error">Error</option>
+          <option value="concept">Concept</option>
+        </select>
+      </label>
+      <label>History Limit <input id="historyLimit" type="number" min="1" max="500"></label>
+      <label class="checkbox-row"><input id="showPauseButton" type="checkbox"> Show pause button</label>
+
+      <div class="actions">
+        <button id="save">Save</button><span id="status"></span>
+      </div>
+    </main>
     <script type="module" src="./options.js"></script>
   </body>
 </html>

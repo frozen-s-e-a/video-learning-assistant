@@ -2,6 +2,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 from app.auth import require_token
 from app.config import Settings, get_settings
@@ -45,6 +46,17 @@ def create_app() -> FastAPI:
     async def handle_http_error(request: Request, exc: HTTPException):
         return JSONResponse(status_code=exc.status_code, content=exc.detail)
 
+    @app.exception_handler(ValidationError)
+    async def handle_configuration_error(request: Request, exc: ValidationError):
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "CONFIGURATION_ERROR",
+                    "message": "Server configuration is invalid. Check server/.env.",
+                }
+            },
+        )
     @app.exception_handler(Exception)
     async def handle_unexpected_error(request: Request, exc: Exception):
         if hasattr(exc, "status_code") and hasattr(exc, "detail"):

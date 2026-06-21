@@ -1,3 +1,5 @@
 .worktrees/
 .tmp/
 .pytest_cache/
+jmcomic_ai.log
+pytest-cache-files*/
